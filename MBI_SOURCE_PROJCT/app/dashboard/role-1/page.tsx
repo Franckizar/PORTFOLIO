@@ -2,8 +2,8 @@
 'use client'
 
 import { useAuthStore } from '@/lib/store/auth'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/existing/card'
+import { Button } from '@/components/ui/existing/button'
 
 export default function Role1Dashboard() {
   const { user, logout } = useAuthStore()

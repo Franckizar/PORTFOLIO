@@ -1,7 +1,7 @@
 // app/dashboard/role-1/projects/page.tsx
 'use client'
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/existing/card'
 
 export default function ProjectsPage() {
   return (

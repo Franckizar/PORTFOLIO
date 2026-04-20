@@ -1,193 +1,269 @@
-// components/marketing/Hero.tsx
-'use client'
+"use client";
 
-import { useState, useEffect, useRef } from 'react'
-import { Play, Trophy, Users, Zap, Volume2, VolumeX } from 'lucide-react'
-import Link from 'next/link'
+import { useState } from "react";
+import Link from "next/link";
+import Image from "next/image";
+import { Download, ArrowDown } from "lucide-react";
+import { Button } from "@/components/ui/ui/Button";
+// import { Button } from "@/components/ui/Button";
 
-export default function Hero() {
-  const [mounted, setMounted] = useState(false)
-  const [isMuted, setIsMuted] = useState(true)
-  const videoRef = useRef<HTMLVideoElement>(null)
-
-  useEffect(() => {
-    setMounted(true)
-  }, [])
-
-  const toggleMute = () => {
-    if (videoRef.current) {
-      videoRef.current.muted = !isMuted
-      setIsMuted(!isMuted)
+// ─── Halftone Dots — uses CSS var so it flips with dark mode ─────────────────
+function HalftoneDots({
+  fill = "var(--neu-primary)",
+  size = 120,
+  className = "",
+}: {
+  fill?: string;
+  size?: number;
+  className?: string;
+}) {
+  const dots = [];
+  const spacing = 12;
+  for (let r = 0; r < Math.ceil(size / spacing); r++) {
+    for (let c = 0; c < Math.ceil(size / spacing); c++) {
+      const x = c * spacing;
+      const y = r * spacing;
+      const dist = Math.sqrt((x - size / 2) ** 2 + (y - size / 2) ** 2);
+      const maxDist = size * 0.5;
+      const radius = Math.max(0.5, 3.5 * (1 - dist / maxDist));
+      if (dist < maxDist) {
+        dots.push(
+          <circle key={`${r}-${c}`} cx={x} cy={y} r={radius} fill={fill} />
+        );
+      }
     }
   }
-
   return (
-    <section className="relative h-screen w-full overflow-hidden">
-      {/* Video Background */}
-      <div className="absolute inset-0 z-0">
-        <video
-          ref={videoRef}
-          autoPlay
-          loop
-          muted={isMuted}
-          playsInline
-          className="w-full h-full object-cover"
-        >
-          <source src="/storm.mp4" type="video/mp4" />
-        </video>
-        
-        {/* Base dark overlay */}
-        <div className="absolute inset-0 bg-black/60"></div>
-        
-        {/* TEXTURE - Main texture.jpg (comic dot pattern) */}
-        <div 
-          className="absolute inset-0 opacity-30 mix-blend-overlay"
-          style={{
-            backgroundImage: `url('/textures/texture.jpg')`,
-            backgroundRepeat: 'repeat',
-            backgroundSize: '200px 200px',
-          }}
-        ></div>
-        
-        {/* TEXTURE 1 - texture1.jpg (secondary effect) */}
-        <div 
-          className="absolute inset-0 opacity-20 mix-blend-soft-light"
-          style={{
-            backgroundImage: `url('/textures/texture1.jpg')`,
-            backgroundRepeat: 'repeat',
-            backgroundSize: '300px 300px',
-          }}
-        ></div>
-        
-        {/* TEXTURE 2 - texture2.jpg (additional layer) */}
-        <div 
-          className="absolute inset-0 opacity-15 mix-blend-multiply"
-          style={{
-            backgroundImage: `url('/textures/texture2.jpg')`,
-            backgroundRepeat: 'repeat',
-            backgroundSize: '150px 150px',
-          }}
-        ></div>
-        
-        {/* Radial overlay - Bigger circular dark center */}
-        <div 
-          className="absolute inset-0" 
-          style={{
-            background: 'radial-gradient(circle, rgba(0, 0, 0, 0.9) 0%, rgba(0, 0, 0, 0.6) 60%, rgba(0, 0, 0, 0.3) 80%, transparent 100%)'
-          }}
-        ></div>
-        
-        {/* Bottom fade */}
-        <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-[#0a0a0f] to-transparent"></div>
+    <svg
+      width={size}
+      height={size}
+      viewBox={`0 0 ${size} ${size}`}
+      className={className}
+      aria-hidden="true"
+    >
+      {dots}
+    </svg>
+  );
+}
+
+// ─── Wave lines ───────────────────────────────────────────────────────────────
+function WaveLines({
+  stroke = "var(--neu-primary)",
+  className = "",
+}: {
+  stroke?: string;
+  className?: string;
+}) {
+  return (
+    <svg
+      width="80"
+      height="40"
+      viewBox="0 0 80 40"
+      className={className}
+      aria-hidden="true"
+    >
+      {[0, 12, 24].map((y, i) => (
+        <path
+          key={i}
+          d={`M0 ${y + 6} Q20 ${y} 40 ${y + 6} Q60 ${y + 12} 80 ${y + 6}`}
+          fill="none"
+          stroke={stroke}
+          strokeWidth="2"
+          strokeLinecap="round"
+          opacity={0.4 - i * 0.08}
+        />
+      ))}
+    </svg>
+  );
+}
+
+// ─── Stat pill ────────────────────────────────────────────────────────────────
+function StatPill({ value, label }: { value: string; label: string }) {
+  return (
+    <div className="text-center">
+      <div className="text-2xl font-black text-primary leading-none">{value}</div>
+      <div className="text-[11px] text-muted-foreground font-medium tracking-[0.05em] uppercase mt-0.5">
+        {label}
       </div>
+    </div>
+  );
+}
 
-      {/* Mute/Unmute Button */}
-      <button
-        onClick={toggleMute}
-        className="absolute top-8 right-8 z-20 w-12 h-12 flex items-center justify-center rounded-full bg-black/50 border-2 border-[#ff6b35]/50 backdrop-blur-sm hover:bg-[#ff6b35]/30 transition-all hover:scale-110"
-        aria-label={isMuted ? 'Unmute' : 'Mute'}
-      >
-        {isMuted ? (
-          <VolumeX className="w-5 h-5 text-white" />
-        ) : (
-          <Volume2 className="w-5 h-5 text-[#ff6b35]" />
-        )}
-      </button>
+// ─── Hero ─────────────────────────────────────────────────────────────────────
+export default function HeroSection() {
+  return (
+    /*
+      No paddingTop here — the header's own <div className="h-16"> spacer
+      already handles the offset. Adding padding here was the extra space.
+    */
+    <section className="
+      w-full bg-background
+      min-h-[calc(100vh-64px)]
+      flex
+    ">
+      {/* Navy left accent strip */}
+      <div className="w-1.5 shrink-0 bg-foreground opacity-80" />
 
-      {/* Content */}
-      <div className="relative z-10 h-full flex items-center justify-center">
-        <div className="container mx-auto px-4 text-center">
-          
-          {/* Badge - with comic style border */}
-          <div 
-            className={`inline-flex items-center gap-2 px-4 py-2 rounded-full bg-black/40 border-2 border-[#ff6b35] mb-6 backdrop-blur-sm transition-all duration-700 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}
-            style={{
-              boxShadow: '0 0 15px rgba(255, 107, 53, 0.5)'
-            }}
-          >
-            <Zap className="w-4 h-4 text-[#ff6b35]" />
-            <span className="text-sm font-bold text-white uppercase tracking-wider">
-              ⚡ SEASON 2 - NOW LIVE ⚡
-            </span>
+      <div className="flex flex-1 min-h-full">
+
+        {/* ── Left panel ─────────────────────────────────────────────────── */}
+        <div className="
+          flex-[0_0_52%] relative
+          flex flex-col justify-center
+          px-14 py-16
+          bg-card
+        ">
+          {/* Halftone top-right decoration */}
+          <div className="absolute top-0 right-4 opacity-[0.18] pointer-events-none">
+            <HalftoneDots fill="var(--neu-error)" size={110} />
           </div>
 
-          {/* Main Headline - with comic style outline */}
-          <h1 
-            className={`text-5xl md:text-7xl lg:text-8xl font-black text-white mb-6 uppercase leading-tight transition-all duration-700 delay-100 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}
-            style={{
-              textShadow: '4px 4px 0 #ff6b35, 8px 8px 0 rgba(0,0,0,0.5), 0 0 30px rgba(255, 107, 53, 0.8)',
-              WebkitTextStroke: '2px rgba(255, 107, 53, 0.3)'
-            }}
-          >
-            DOMINATE
-            <span className="block text-[#ff6b35]" style={{
-              textShadow: '3px 3px 0 #000, 6px 6px 0 rgba(255,0,0,0.3)',
-              WebkitTextStroke: '1px #000'
-            }}>THE ARENA</span>
+          {/* Wave bottom-left decoration */}
+          <div className="absolute bottom-7 left-8 pointer-events-none">
+            <WaveLines />
+          </div>
+
+          {/* Tag */}
+          <div className="
+            inline-flex items-center gap-2
+            text-[11px] font-semibold text-primary
+            uppercase tracking-[0.12em] mb-4
+          ">
+            <span className="w-6 h-0.5 bg-primary rounded-full" />
+            Full-Stack Developer
+          </div>
+
+          {/* Headline */}
+          <h1 className="
+            text-[clamp(2.4rem,4.5vw,3.5rem)]
+            font-black text-foreground
+            leading-[1.12] tracking-[-0.02em]
+            mb-5
+          ">
+            Crafting digital
+            <br />
+            experiences that
+            <br />
+            <span className="text-primary">inspire & convert</span>
           </h1>
 
-          {/* Subtext */}
-          <p 
-            className={`text-lg md:text-xl text-gray-200 mb-8 max-w-2xl mx-auto leading-relaxed transition-all duration-700 delay-200 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}
-            style={{
-              textShadow: '2px 2px 0 rgba(0,0,0,0.5)'
-            }}
-          >
-            COMPETE AGAINST THE BEST. WIN MASSIVE PRIZES. PROVE YOU&apos;RE THE CHAMPION.
+          {/* Sub */}
+          <p className="
+            text-[15px] text-muted-foreground
+            leading-relaxed mb-10 max-w-[380px]
+          ">
+            I build fast, accessible, and beautiful web applications with
+            Next.js, Spring Boot, and modern architecture. Let's turn your
+            ideas into products users love.
           </p>
 
-          {/* Stats Bar - comic style */}
-          <div 
-            className={`flex flex-wrap justify-center gap-8 mb-10 transition-all duration-700 delay-300 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}
-          >
-            <div className="flex items-center gap-2 bg-black/40 px-4 py-2 rounded-full border border-[#ff6b35]/50">
-              <Trophy className="w-5 h-5 text-[#ff6b35]" />
-              <span className="text-white font-bold">$50,000 PRIZE POOL</span>
-            </div>
-            <div className="flex items-center gap-2 bg-black/40 px-4 py-2 rounded-full border border-[#ff6b35]/50">
-              <Users className="w-5 h-5 text-[#ff6b35]" />
-              <span className="text-white font-bold">2,500+ PLAYERS</span>
-            </div>
-            <div className="flex items-center gap-2 bg-black/40 px-4 py-2 rounded-full border border-[#ff6b35]/50">
-              <Play className="w-5 h-5 text-[#ff6b35]" />
-              <span className="text-white font-bold">LIVE TOURNAMENTS</span>
-            </div>
-          </div>
-
-          {/* CTA Buttons - comic style */}
-          <div 
-            className={`flex flex-col sm:flex-row gap-4 justify-center items-center transition-all duration-700 delay-400 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}
-          >
-            <Link
-              href="/register"
-              className="group relative px-8 py-4 bg-gradient-to-r from-[#ff6b35] to-[#ff0000] text-white font-black text-lg uppercase tracking-wider rounded-lg overflow-hidden transition-all hover:scale-105"
-              style={{
-                border: '3px solid #fff',
-                boxShadow: '0 0 0 3px #ff6b35, 0 10px 20px rgba(0,0,0,0.5), 0 0 30px rgba(255,107,53,0.8)'
-              }}
-            >
-              <span className="relative z-10">APPLY NOW - 500 XAF</span>
-              <div className="absolute inset-0 bg-gradient-to-r from-[#ff0000] to-[#ff6b35] opacity-0 group-hover:opacity-100 transition-opacity"></div>
+          {/* CTAs — Button component */}
+          <div className="flex items-center gap-4 mb-12">
+            <Link href="/projects">
+              <Button variant="primary" size="lg" className="rounded-full">
+                View My Work
+              </Button>
             </Link>
 
-            <Link
-              href="#events"
-              className="px-8 py-4 bg-transparent border-4 border-white text-white font-bold text-lg uppercase tracking-wider rounded-lg transition-all hover:bg-white/20 hover:border-[#ff6b35] hover:scale-105"
-              style={{
-                textShadow: '2px 2px 0 rgba(0,0,0,0.5)',
-                boxShadow: '0 5px 15px rgba(0,0,0,0.5)'
-              }}
-            >
-              VIEW EVENTS
+            <Link href="/resume">
+              <Button
+                variant="secondary"
+                size="lg"
+                icon={Download}
+                iconPosition="right"
+                className="rounded-full"
+              >
+                Download CV
+              </Button>
             </Link>
           </div>
 
-          {/* Entry Fee Note - with comic style */}
-          <p className="text-sm text-gray-300 mt-6 font-bold uppercase tracking-wider bg-black/30 inline-block px-4 py-1 rounded-full border border-[#ff6b35]/30">
-            ⚡ ONE-TIME ENTRY FEE • UNLIMITED TOURNAMENT ACCESS ⚡
-          </p>
+          {/* Stats */}
+          <div className="flex items-center gap-8">
+            <StatPill value="50+" label="Projects" />
+            <div className="w-px h-8 bg-border" />
+            <StatPill value="3+" label="Years Exp" />
+            <div className="w-px h-8 bg-border" />
+            <StatPill value="Next.js" label="Specialty" />
+          </div>
+        </div>
+
+        {/* ── Right panel ────────────────────────────────────────────────── */}
+        <div className="
+          flex-1 relative overflow-hidden
+          bg-[linear-gradient(135deg,hsl(var(--muted))_0%,hsl(var(--secondary))_100%)]
+        ">
+          {/* Halftone bottom-left */}
+          <div className="absolute bottom-0 left-2 opacity-[0.15] pointer-events-none">
+            <HalftoneDots fill="var(--neu-primary)" size={130} />
+          </div>
+
+          {/* Geometric rings — top-right */}
+          <div className="
+            absolute top-5 right-5
+            w-14 h-14 rounded-full
+            border-[2.5px] border-primary/30
+          " />
+          <div className="
+            absolute top-8 right-8
+            w-9 h-9 rounded-full
+            border-2 border-foreground/15
+          " />
+
+          {/* Wave top-left */}
+          <div className="absolute top-7 left-7 rotate-90 pointer-events-none">
+            <WaveLines stroke="var(--neu-primary)" className="opacity-25" />
+          </div>
+
+          {/* Profile photo */}
+          <div className="
+            absolute inset-0
+            flex items-end justify-center
+            pb-8
+          ">
+            <div className="
+              relative w-[85%] h-[90%]
+              rounded-[2rem_2rem_0_0] overflow-hidden
+              shadow-neu-raised
+            ">
+              {/* Replace src with your real photo */}
+              <Image
+                src="https://cdn.pixabay.com/photo/2024/01/10/16/22/man-8499961_1280.jpg"
+                alt="Arthur Takam — Full-Stack Developer"
+                fill
+                className="object-cover object-top"
+                sizes="(max-width: 768px) 100vw, 48vw"
+                priority
+              />
+            </div>
+          </div>
+
+          {/* Open to Work badge */}
+          <div className="
+            absolute top-1/2 -left-9 -translate-y-1/2 z-10
+            w-[90px] h-[90px] rounded-full
+            bg-foreground
+            border-[4px] border-card
+            flex flex-col items-center justify-center
+            shadow-neu-raised
+          ">
+            <span className="
+              text-[9px] font-bold uppercase tracking-[0.08em]
+              text-muted-foreground leading-none
+            ">
+              Open
+            </span>
+            <span className="
+              text-[14px] font-black text-card
+              leading-[1.1] text-center
+            ">
+              TO
+              <br />
+              WORK
+            </span>
+          </div>
         </div>
       </div>
     </section>
-  )
+  );
 }

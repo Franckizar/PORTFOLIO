@@ -1,121 +1,165 @@
-// ```tsx
-"use client"
+"use client";
 
-import Link from "next/link"
-import { ArrowLeft, Home, Mail } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import Link from "next/link";
+import { Button } from "@/components/ui/ui/Button";
+import { Home, ArrowLeft, Search, Zap } from "lucide-react";
+import { useEffect, useState } from "react";
 
 export default function NotFound() {
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-100 to-blue-100 dark:from-gray-900 dark:to-blue-950 flex items-center justify-center px-4 sm:px-6 lg:px-8">
-      <Card className="max-w-lg w-full bg-white dark:bg-gray-800 shadow-2xl animate-fade-in">
-        <CardHeader className="text-center">
-          <CardTitle className="text-5xl md:text-6xl font-extrabold text-gray-900 dark:text-white">
-            <span className="inline-block px-2 py-1 animate-gradient bg-gradient-to-r from-purple-500 via-indigo-500 to-purple-700 bg-[length:200%_auto] text-transparent bg-clip-text">
-              404
-            </span>
-          </CardTitle>
-          <h2 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white mt-4">
-            Oops! Page Not Found
-          </h2>
-        </CardHeader>
-        <CardContent className="text-center space-y-6">
-          <p className="text-lg text-gray-600 dark:text-gray-300">
-            Looks like you&apos;ve wandered into uncharted digital territory. Let&apos;s get you back on track with MBI Digital Agency!
-          </p>
-          <div className="relative h-32 w-full flex justify-center items-center">
-            {/* Animated Gradient Wave */}
-            <div className="absolute w-48 h-48 rounded-full bg-gradient-to-r from-purple-500 to-blue-600 opacity-20 animate-pulse-scale" />
-            <div className="absolute w-32 h-32 rounded-full bg-gradient-to-r from-indigo-500 to-purple-700 opacity-30 animate-pulse-scale delay-150" />
-            <svg
-              className="w-16 h-16 text-purple-600 dark:text-purple-400"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-              xmlns="http://www.w3.org/2000/svg"
-              aria-hidden="true"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-              />
-            </svg>
-          </div>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button
-              asChild
-              className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-semibold rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300"
-            >
-              <Link href="/" aria-label="Return to homepage">
-                <Home className="mr-2 h-4 w-4" />
-                Back to Home
-              </Link>
-            </Button>
-            <Button
-              asChild
-              variant="outline"
-              className="border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white hover:bg-gray-200 dark:hover:bg-gray-700 rounded-2xl shadow-md hover:shadow-lg transition-all duration-300"
-            >
-              <Link href="/contact" aria-label="Contact MBI Digital Agency">
-                <Mail className="mr-2 h-4 w-4" />
-                Contact Us
-              </Link>
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
 
-      {/* CSS for Animations */}
-      <style jsx>{`
-        @keyframes gradient-move {
-          0% {
-            background-position: 0% 50%;
-          }
-          100% {
-            background-position: 200% 50%;
-          }
-        }
-        @keyframes fade-in {
-          from {
-            opacity: 0;
-            transform: translateY(20px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-        @keyframes pulse-scale {
-          0% {
-            transform: scale(1);
-            opacity: 0.3;
-          }
-          50% {
-            transform: scale(1.2);
-            opacity: 0.5;
-          }
-          100% {
-            transform: scale(1);
-            opacity: 0.3;
-          }
-        }
-        .animate-gradient {
-          animation: gradient-move 4s linear infinite;
-        }
-        .animate-fade-in {
-          animation: fade-in 0.8s ease-out;
-        }
-        .animate-pulse-scale {
-          animation: pulse-scale 3s ease-in-out infinite;
-        }
-        .delay-150 {
-          animation-delay: 0.15s;
-        }
-      `}</style>
-    </div>
-  )
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      setMousePosition({ x: e.clientX, y: e.clientY });
+    };
+    window.addEventListener("mousemove", handleMouseMove);
+    return () => window.removeEventListener("mousemove", handleMouseMove);
+  }, []);
+
+  return (
+    <section className="relative w-full min-h-screen bg-background overflow-hidden">
+      {/* Animated gradient background */}
+      <div className="absolute inset-0 z-0">
+        <div 
+          className="absolute inset-0 bg-gradient-to-br from-background via-background to-primary/5"
+          style={{
+            background: `radial-gradient(circle at ${mousePosition.x}px ${mousePosition.y}px, var(--neu-primary)/0.08 0%, transparent 50%)`
+          }}
+        />
+      </div>
+
+      {/* Halftone dots decoration */}
+      <div className="absolute top-20 right-20 opacity-[0.03] pointer-events-none">
+        <svg width="200" height="200" viewBox="0 0 200 200">
+          <defs>
+            <pattern id="notfound-dots" x="0" y="0" width="15" height="15" patternUnits="userSpaceOnUse">
+              <circle cx="7.5" cy="7.5" r="2" fill="var(--neu-primary)" />
+            </pattern>
+          </defs>
+          <rect width="200" height="200" fill="url(#notfound-dots)" />
+        </svg>
+      </div>
+
+      {/* Wave lines decoration */}
+      <div className="absolute bottom-0 left-0 opacity-[0.05] pointer-events-none">
+        <svg width="400" height="150" viewBox="0 0 400 150">
+          <path
+            d="M0 100 Q100 50 200 100 T400 100"
+            fill="none"
+            stroke="var(--neu-primary)"
+            strokeWidth="3"
+          />
+          <path
+            d="M0 120 Q100 70 200 120 T400 120"
+            fill="none"
+            stroke="var(--neu-primary)"
+            strokeWidth="2"
+            opacity="0.6"
+          />
+          <path
+            d="M0 140 Q100 90 200 140 T400 140"
+            fill="none"
+            stroke="var(--neu-primary)"
+            strokeWidth="1"
+            opacity="0.3"
+          />
+        </svg>
+      </div>
+
+      {/* Floating geometric shapes */}
+      <div className="absolute top-1/4 left-10 w-20 h-20 rounded-full border-2 border-primary/10 animate-float" />
+      <div className="absolute bottom-1/3 right-10 w-12 h-12 rounded-lg border-2 border-primary/10 animate-float" style={{ animationDelay: "1s" }} />
+      <div className="absolute top-2/3 left-1/4 w-8 h-8 rounded-full bg-primary/5 animate-pulse" />
+
+      {/* Main content */}
+      <div className="relative z-10 container mx-auto px-4 md:px-6 min-h-screen flex items-center justify-center">
+        <div className="text-center max-w-2xl mx-auto">
+          {/* 404 Number with glow */}
+          <div className="relative mb-8">
+            <div className="text-[120px] md:text-[180px] font-black text-foreground tracking-[-0.05em] leading-none">
+              4
+              <span className="text-primary relative inline-block animate-bounce-subtle">
+                0
+                <div className="absolute inset-0 blur-xl bg-primary/30 rounded-full -z-10" />
+              </span>
+              4
+            </div>
+            <div className="absolute inset-0 flex items-center justify-center -z-10">
+              <div className="w-64 h-64 rounded-full bg-primary/5 blur-3xl" />
+            </div>
+          </div>
+
+          {/* Error message */}
+          <div className="inline-flex items-center gap-2 text-[11px] font-semibold text-primary uppercase tracking-[0.12em] mb-4">
+            <span className="w-6 h-0.5 bg-primary rounded-full" />
+            Page Not Found
+          </div>
+
+          <h1 className="text-3xl md:text-4xl font-black text-foreground tracking-[-0.02em] mb-4">
+            Oops! You've wandered off course
+          </h1>
+          
+          <p className="text-muted-foreground text-[15px] leading-relaxed mb-8 max-w-md mx-auto">
+            The page you're looking for doesn't exist or has been moved. 
+            Let's get you back to where you belong.
+          </p>
+
+          {/* Action buttons */}
+          <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
+            <Link href="/">
+              <Button variant="primary" size="lg" icon={Home} iconPosition="right" className="rounded-full w-full sm:w-auto">
+                Back to Home
+              </Button>
+            </Link>
+            <Link href="/projects">
+              <Button variant="secondary" size="lg" icon={Search} iconPosition="right" className="rounded-full w-full sm:w-auto">
+                Browse Projects
+              </Button>
+            </Link>
+          </div>
+
+          {/* Quick links */}
+          <div className="pt-8 border-t border-border">
+            <p className="text-xs text-muted-foreground mb-4">
+              Or try one of these popular pages:
+            </p>
+            <div className="flex flex-wrap gap-3 justify-center">
+              {[
+                { name: "About Me", href: "/about" },
+                { name: "Projects", href: "/projects" },
+                { name: "Contact", href: "/contact" },
+                { name: "Resume", href: "/resume" },
+              ].map((link) => (
+                <Link
+                  key={link.name}
+                  href={link.href}
+                  className="text-sm text-muted-foreground hover:text-primary transition-colors"
+                >
+                  {link.name}
+                </Link>
+              ))}
+            </div>
+          </div>
+
+          {/* Powered by */}
+          <div className="mt-8 pt-4">
+            <p className="text-[10px] text-muted-foreground flex items-center justify-center gap-1">
+              <span>Lost?</span>
+              <Zap size={8} className="text-primary" />
+              <span>Let me guide you home</span>
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Scroll to top button (floating) */}
+      <button
+        onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+        className="fixed bottom-6 right-6 z-50 p-3 rounded-full bg-card border border-border shadow-neu-raised hover:shadow-neu-raised-lg transition-all duration-300 hover:-translate-y-1"
+        aria-label="Scroll to top"
+      >
+        <ArrowLeft size={18} className="text-primary rotate-90" />
+      </button>
+    </section>
+  );
 }
-// ```

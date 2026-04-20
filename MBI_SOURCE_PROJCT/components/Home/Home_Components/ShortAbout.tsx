@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { ArrowRight } from "lucide-react"
-import { Button } from "@/components/ui/button"
+import { Button } from "@/components/ui/existing/button"
 import { useEffect, useRef } from "react"
 
 const images = ["/1.jpg", "/2.jpg", "/3.jpg"]

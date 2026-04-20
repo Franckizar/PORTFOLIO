@@ -1,489 +1,397 @@
-'use client'
+"use client";
 
-import { useState, useEffect, useRef } from 'react'
-import Link from 'next/link'
-import { Menu, Gamepad2, LogOut } from 'lucide-react'
-import { useAuthStore, getDashboardPath } from '@/lib/store/auth'
+import { useState, useEffect, useRef } from 'react';
+import Link from 'next/link';
+import { Menu, Github, Linkedin, Mail, Download, X, Sun, Moon } from 'lucide-react';
+import { useAuthStore, getDashboardPath } from '@/lib/store/auth';
+import { Button } from '../ui/ui/Button';
+// import { Button } from '@/components/ui/Button';
 
-export default function MarketingHeader() {
-  const { user, logout } = useAuthStore()
-  const [activeItem, setActiveItem] = useState('home')
-  const [scrolled, setScrolled] = useState(false)
-  const [mounted, setMounted] = useState(false)
-  const navRef = useRef<HTMLUListElement>(null)
-  const animationRef = useRef<NodeJS.Timeout | null>(null)
+// ─── Halftone Dots — pure decoration, no color tokens needed here ─────────────
+function HalftoneDots({ size = 80 }: { size?: number }) {
+  const dots = [];
+  const spacing = 10;
+  for (let r = 0; r < Math.ceil(size / spacing); r++) {
+    for (let c = 0; c < Math.ceil(size / spacing); c++) {
+      const x = c * spacing;
+      const y = r * spacing;
+      const dist = Math.sqrt((x - size / 2) ** 2 + (y - size / 2) ** 2);
+      const maxDist = size * 0.5;
+      const radius = Math.max(0.5, 2.5 * (1 - dist / maxDist));
+      if (dist < maxDist) {
+        dots.push(
+          // Uses CSS variable so it adapts to theme automatically
+          <circle key={`${r}-${c}`} cx={x} cy={y} r={radius} fill="var(--neu-primary)" />
+        );
+      }
+    }
+  }
+  return (
+    <svg
+      width={size} height={size} viewBox={`0 0 ${size} ${size}`}
+      className="absolute opacity-[0.12]"
+      aria-hidden="true"
+    >
+      {dots}
+    </svg>
+  );
+}
+
+// ─── Theme Toggle ─────────────────────────────────────────────────────────────
+// Reads/writes .dark on <html> — your globals.css + tailwind handles the rest
+function ThemeToggle() {
+  const [isDark,   setIsDark]   = useState(false);
+  const [mounted,  setMounted]  = useState(false);
+
+  useEffect(() => {
+    const saved       = localStorage.getItem('portfolio-theme');
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    const shouldBeDark = saved === 'dark' || (!saved && prefersDark);
+    document.documentElement.classList.toggle('dark', shouldBeDark);
+    setIsDark(shouldBeDark);
+    setMounted(true);
+  }, []);
+
+  const toggle = () => {
+    const next = !isDark;
+    document.documentElement.classList.toggle('dark', next);
+    localStorage.setItem('portfolio-theme', next ? 'dark' : 'light');
+    setIsDark(next);
+  };
+
+  if (!mounted) return (
+    <div className="w-9 h-9 rounded-full neu-raised-sm neu-skeleton shrink-0" />
+  );
+
+  return (
+    <button
+      onClick={toggle}
+      aria-label={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
+      className="
+        neu-btn neu-raised-sm w-9 h-9 rounded-full shrink-0
+        flex items-center justify-center
+        text-muted-foreground hover:text-primary
+        transition-colors duration-[var(--transition-fast)]
+      "
+    >
+      {isDark
+        ? <Sun  size={16} className="text-yellow-400" />
+        : <Moon size={16} />
+      }
+    </button>
+  );
+}
+
+// ─── Social Icon Button ───────────────────────────────────────────────────────
+function SocialBtn({
+  href, icon: Icon, label,
+}: {
+  href: string; icon: React.ElementType; label: string;
+}) {
+  return (
+    <Link
+      href={href}
+      target="_blank"
+      rel="noopener noreferrer"
+      aria-label={label}
+      className="
+        neu-btn neu-raised-sm w-9 h-9 rounded-full shrink-0
+        flex items-center justify-center
+        text-muted-foreground hover:text-primary
+        transition-colors duration-[var(--transition-fast)]
+      "
+    >
+      <Icon size={16} />
+    </Link>
+  );
+}
+
+// ─── Main Header ──────────────────────────────────────────────────────────────
+export default function PortfolioHeader() {
+  const { user }                    = useAuthStore();
+  const [activeItem, setActiveItem] = useState('home');
+  const [scrolled,   setScrolled]   = useState(false);
+  const [mounted,    setMounted]    = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const navRef                      = useRef<HTMLDivElement>(null);
+  const animationRef                = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const navItems = [
-    { id: 'home', label: 'Home', href: '/' },
-    { id: 'events', label: 'Events', href: '#events' },
-    { id: 'rules', label: 'Rules', href: '#rules' },
-    { id: 'prizes', label: 'Prizes', href: '#prizes' },
-  ]
+    { id: 'home',     label: 'Home',     href: '/' },
+    { id: 'about',    label: 'About',    href: '/about' },
+    { id: 'projects', label: 'Projects', href: '/projects' },
+    { id: 'contact',  label: 'Contact',  href: '/contact' },
+  ];
 
-  useEffect(() => {
-    setMounted(true)
-  }, [])
+  const socials = [
+    { icon: Github,   href: 'https://github.com/franckizar',        label: 'GitHub'      },
+    { icon: Linkedin, href: 'https://linkedin.com/in/arthur-takam', label: 'LinkedIn'    },
+    { icon: Mail,     href: 'mailto:arthur@example.com',            label: 'Email'       },
+    { icon: Download, href: '/resume.pdf',                          label: 'Download CV' },
+  ];
 
+  useEffect(() => { setMounted(true); }, []);
+
+  const dashboardPath = mounted && user ? getDashboardPath(user) : '/dashboard';
+
+  // ── Nav indicator animation (preserved exactly) ───────────────────────────
   const animateIndicator = (from: number, to: number) => {
-    if (animationRef.current) {
-      clearInterval(animationRef.current)
-    }
-
-    const start = Date.now()
+    if (animationRef.current) clearInterval(animationRef.current);
+    const start = Date.now();
     animationRef.current = setInterval(() => {
-      const p = Math.min((Date.now() - start) / 500, 1)
-      const e = 1 - Math.pow(1 - p, 3)
-
-      const x = from + (to - from) * e
-      const y = -40 * (4 * e * (1 - e))
-      const r = 200 * Math.sin(p * Math.PI)
-
+      const p = Math.min((Date.now() - start) / 500, 1);
+      const e = 1 - Math.pow(1 - p, 3);
+      const x = from + (to - from) * e;
+      const y = -40 * (4 * e * (1 - e));
+      const ro = 200 * Math.sin(p * Math.PI);
       if (navRef.current) {
-        navRef.current.style.setProperty('--translate-x', `${x}px`)
-        navRef.current.style.setProperty('--translate-y', `${y}px`)
-        navRef.current.style.setProperty('--rotate-x', `${r}deg`)
-
+        navRef.current.style.setProperty('--translate-x', `${x}px`);
+        navRef.current.style.setProperty('--translate-y', `${y}px`);
+        navRef.current.style.setProperty('--rotate-x',   `${ro}deg`);
         if (p >= 1) {
-          clearInterval(animationRef.current!)
-          animationRef.current = null
-          navRef.current.style.setProperty('--translate-y', '0px')
-          navRef.current.style.setProperty('--rotate-x', '0deg')
+          clearInterval(animationRef.current!);
+          animationRef.current = null;
+          navRef.current.style.setProperty('--translate-y', '0px');
+          navRef.current.style.setProperty('--rotate-x',   '0deg');
         }
       }
-    }, 16)
-  }
+    }, 16);
+  };
 
-  const getCurrentPosition = (): number => {
-    if (!navRef.current) return 0
-    const value = navRef.current.style.getPropertyValue('--translate-x')
-    return parseFloat(value) || 0
-  }
+  const getCurrentPosition = () =>
+    parseFloat(navRef.current?.style.getPropertyValue('--translate-x') || '0') || 0;
 
-  const getItemCenter = (item: HTMLElement): number => {
-    if (!navRef.current) return 0
-    const navRect = navRef.current.getBoundingClientRect()
-    const itemRect = item.getBoundingClientRect()
-    return itemRect.left + itemRect.width / 2 - navRect.left - 5
-  }
+  const getItemCenter = (el: HTMLElement) => {
+    if (!navRef.current) return 0;
+    const navRect  = navRef.current.getBoundingClientRect();
+    const itemRect = el.getBoundingClientRect();
+    return itemRect.left + itemRect.width / 2 - navRect.left - 5;
+  };
 
-  const moveToItem = (item: HTMLElement) => {
-    const current = getCurrentPosition()
-    const center = getItemCenter(item)
-    animateIndicator(current, center)
-    if (navRef.current) {
-      navRef.current.classList.add('show-indicator')
-    }
-  }
+  const moveToItem = (el: HTMLElement) => {
+    animateIndicator(getCurrentPosition(), getItemCenter(el));
+    navRef.current?.classList.add('show-indicator');
+  };
 
-  const handleMouseEnter = (e: React.MouseEvent<HTMLAnchorElement>) => {
-    moveToItem(e.currentTarget)
-  }
+  const handleMouseEnter = (e: React.MouseEvent<HTMLAnchorElement>) =>
+    moveToItem(e.currentTarget);
 
   const handleMouseLeave = () => {
-    const activeElement = document.querySelector(`[data-nav-id="${activeItem}"]`) as HTMLElement
-    if (activeElement) {
-      moveToItem(activeElement)
-    } else if (navRef.current) {
-      navRef.current.classList.remove('show-indicator')
+    const active = document.querySelector<HTMLElement>(`[data-nav-id="${activeItem}"]`);
+    if (active) moveToItem(active);
+    else {
+      navRef.current?.classList.remove('show-indicator');
       if (animationRef.current) {
-        clearInterval(animationRef.current)
-        animationRef.current = null
+        clearInterval(animationRef.current);
+        animationRef.current = null;
       }
     }
-  }
-
-  const handleClick = (id: string) => {
-    setActiveItem(id)
-  }
-
-  const handleLogout = async () => {
-    await logout()
-  }
+  };
 
   useEffect(() => {
-    const activeElement = document.querySelector(`[data-nav-id="${activeItem}"]`) as HTMLElement
-    if (activeElement) {
-      setTimeout(() => moveToItem(activeElement), 100)
-    }
+    const active = document.querySelector<HTMLElement>(`[data-nav-id="${activeItem}"]`);
+    if (active) setTimeout(() => moveToItem(active), 100);
 
-    const handleScroll = () => setScrolled(window.scrollY > 20)
-    window.addEventListener('scroll', handleScroll)
-
+    const onScroll = () => setScrolled(window.scrollY > 20);
+    window.addEventListener('scroll', onScroll);
     return () => {
-      window.removeEventListener('scroll', handleScroll)
-      if (animationRef.current) {
-        clearInterval(animationRef.current)
-      }
-    }
-  }, [])
-
-  // ✅ uses getDashboardPath - works for ALL roles
-  const dashboardPath = mounted && user ? getDashboardPath(user) : '/dashboard'
+      window.removeEventListener('scroll', onScroll);
+      if (animationRef.current) clearInterval(animationRef.current);
+    };
+  }, [activeItem]);
 
   return (
     <>
-      <style jsx global>{`
-        :root {
-          --orange: #ff6b35;
-          --red: #ff0000;
-          --dark: #0a0a0f;
-          --gray: #1a1a1a;
-          --light-gray: #2a2a2a;
+      {/* ── Fixed Header ─────────────────────────────────────────────────── */}
+      <header className={`
+        fixed top-0 left-0 right-0 z-[1000] h-16
+        bg-card border-b
+        transition-all duration-[var(--transition-normal)]
+        ${scrolled
+          ? 'border-primary/20 shadow-neu-raised-sm'
+          : 'border-border'
         }
+      `}>
 
-        /* ✅ REMOVED: body padding-top is now in MarketingLayout only */
-        /* This prevents the padding from leaking into login/register pages */
-        
-        .egaming-header {
-          position: fixed;
-          top: 52px;
-          left: 50%;
-          transform: translateX(-50%);
-          width: 90%;
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          padding: 16px 28px;
-          border-radius: 16px;
-          background: rgba(26, 26, 26, 0.9);
-          backdrop-filter: blur(20px);
-          border: 2px solid rgba(255, 107, 53, 0.2);
-          box-shadow: 
-            0 8px 32px rgba(0, 0, 0, 0.8),
-            0 0 20px rgba(255, 107, 53, 0.1),
-            inset 0 1px 0 rgba(255, 255, 255, 0.05);
-          transition: all 0.3s;
-          z-index: 90;
-        }
+        {/* Halftone corner — color comes from var(--neu-primary) inside the component */}
+        <div className="absolute top-0 right-0 w-[120px] h-16 pointer-events-none overflow-hidden">
+          <HalftoneDots size={80} />
+        </div>
 
-        .egaming-header.scrolled {
-          top: 52px;
-          padding: 12px 22px;
-          background: rgba(26, 26, 26, 0.95);
-          border-color: rgba(255, 0, 0, 0.3);
-        }
+        <nav className="
+          flex items-center justify-between
+          h-full px-6 md:px-10 mx-auto max-w-[1200px] relative z-10
+        ">
 
-        .header-content {
-          width: 100%;
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-        }
-
-        .nav-brand {
-          font-size: 1.5rem;
-          font-weight: 900;
-          color: var(--orange);
-          text-decoration: none;
-          display: flex;
-          align-items: center;
-          gap: 8px;
-          padding: 10px 20px;
-          border-radius: 12px;
-          transition: 0.2s;
-          text-transform: uppercase;
-          letter-spacing: 2px;
-          background: rgba(255, 107, 53, 0.1);
-          border: 1px solid rgba(255, 107, 53, 0.3);
-        }
-
-        .nav-brand:hover {
-          background: rgba(255, 107, 53, 0.2);
-          transform: translateY(-2px);
-          box-shadow: 0 4px 12px rgba(255, 107, 53, 0.3);
-        }
-
-        .nav-container {
-          flex: 1;
-          max-width: 600px;
-          margin: 0 auto;
-          position: relative;
-        }
-
-        .nav-bg {
-          position: absolute;
-          inset: 0;
-          background: rgba(42, 42, 42, 0.6);
-          backdrop-filter: blur(10px);
-          border-radius: 12px;
-          border: 1px solid rgba(255, 107, 53, 0.2);
-          z-index: 1;
-        }
-        
-        .nav-list {
-          position: relative;
-          list-style: none;
-          display: flex;
-          justify-content: center;
-          height: 48px;
-          padding: 0 15px;
-          z-index: 2;
-        }
-        
-        .nav-list::after {
-          content: '';
-          position: absolute;
-          left: 0;
-          bottom: 6px;
-          width: 12px;
-          height: 12px;
-          background: var(--red);
-          border-radius: 50%;
-          transform: translateX(var(--translate-x, 0)) translateY(var(--translate-y, 0));
-          opacity: 0;
-          box-shadow: 0 0 20px var(--red);
-          z-index: 1;
-        }
-        
-        .nav-item {
-          position: relative;
-          width: 100%;
-          height: 100%;
-          display: flex;
-          justify-content: center;
-          align-items: center;
-          z-index: 2;
-        }
-        
-        .nav-link {
-          width: 100%;
-          height: 100%;
-          display: flex;
-          justify-content: center;
-          align-items: center;
-          color: #999;
-          text-decoration: none;
-          font-weight: 700;
-          font-size: 0.95rem;
-          padding-inline: 20px;
-          transition: all 0.2s;
-          border-radius: 8px;
-          text-transform: uppercase;
-          letter-spacing: 1px;
-        }
-        
-        .nav-link:hover,
-        .nav-link.active {
-          color: var(--orange);
-          text-shadow: 0 0 10px rgba(255, 107, 53, 0.5);
-        }
-        
-        .nav-list.show-indicator::after {
-          opacity: 1;
-        }
-        
-        .nav-actions {
-          display: flex;
-          align-items: center;
-          gap: 12px;
-        }
-
-        .user-menu {
-          display: flex;
-          align-items: center;
-          gap: 8px;
-          padding: 6px 16px 6px 8px;
-          border-radius: 30px;
-          background: rgba(255, 107, 53, 0.1);
-          border: 1px solid rgba(255, 107, 53, 0.3);
-          cursor: pointer;
-          transition: all 0.2s;
-        }
-
-        .user-menu:hover {
-          background: rgba(255, 107, 53, 0.2);
-          border-color: var(--orange);
-        }
-
-        .user-avatar {
-          width: 32px;
-          height: 32px;
-          border-radius: 50%;
-          background: linear-gradient(135deg, var(--orange), var(--red));
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          color: white;
-          font-weight: bold;
-          font-size: 14px;
-          text-transform: uppercase;
-        }
-
-        .user-info {
-          display: flex;
-          flex-direction: column;
-        }
-
-        .user-name {
-          color: white;
-          font-size: 0.85rem;
-          font-weight: 600;
-          line-height: 1.2;
-        }
-
-        .user-role {
-          color: var(--orange);
-          font-size: 0.7rem;
-          text-transform: uppercase;
-          letter-spacing: 0.5px;
-        }
-
-        .nav-actions .login-btn {
-          color: #999;
-          font-weight: 600;
-          padding: 8px 20px;
-          border-radius: 8px;
-          transition: 0.2s;
-          background: rgba(42, 42, 42, 0.8);
-          border: 1px solid rgba(255, 107, 53, 0.2);
-          text-decoration: none;
-          font-size: 0.95rem;
-          text-transform: uppercase;
-          letter-spacing: 1px;
-        }
-
-        .nav-actions .login-btn:hover {
-          color: var(--orange);
-          background: rgba(255, 107, 53, 0.1);
-          border-color: var(--orange);
-        }
-
-        .nav-actions .cta-btn {
-          background: linear-gradient(135deg, var(--orange), var(--red));
-          color: white;
-          font-weight: 700;
-          padding: 10px 28px;
-          border-radius: 25px;
-          transition: 0.2s;
-          text-decoration: none;
-          font-size: 0.95rem;
-          border: none;
-          text-transform: uppercase;
-          letter-spacing: 1px;
-          box-shadow: 0 4px 15px rgba(255, 107, 53, 0.3);
-        }
-
-        .nav-actions .cta-btn:hover {
-          transform: translateY(-2px);
-          box-shadow: 0 6px 20px rgba(255, 107, 53, 0.5);
-        }
-
-        .mobile-menu-btn {
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          width: 44px;
-          height: 44px;
-          border-radius: 12px;
-          background: rgba(42, 42, 42, 0.8);
-          border: 1px solid rgba(255, 107, 53, 0.2);
-          cursor: pointer;
-          color: var(--orange);
-          transition: 0.2s;
-        }
-
-        .mobile-menu-btn:hover {
-          background: rgba(255, 107, 53, 0.1);
-          border-color: var(--orange);
-        }
-
-        @media (max-width: 768px) {
-          .egaming-header {
-            width: 95%;
-            padding: 12px 18px;
-          }
-
-          .nav-brand {
-            font-size: 1.25rem;
-            padding: 8px 16px;
-          }
-
-          .nav-container,
-          .nav-actions {
-            display: none;
-          }
-
-          .mobile-menu-btn {
-            display: flex;
-          }
-        }
-
-        @media (min-width: 769px) {
-          .mobile-menu-btn {
-            display: none;
-          }
-        }
-      `}</style>
-
-      <header className={`egaming-header ${scrolled ? 'scrolled' : ''}`}>
-        <div className="header-content">
-          <Link href="/" className="nav-brand">
-            <Gamepad2 size={24} />
-            ARENA
+          {/* ── Logo ───────────────────────────────────────────────────────── */}
+          <Link href="/" className="flex items-center gap-2.5 no-underline shrink-0">
+            <div className="
+              w-[38px] h-[38px] rounded-full shrink-0
+              flex items-center justify-center
+              neu-btn neu-raised-sm
+              bg-neu-primary-gradient
+            ">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path
+                  d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"
+                  stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+                />
+              </svg>
+            </div>
+            <div>
+              {/*
+                text-foreground  → light mode: dark navy-ish  |  dark mode: near-white
+                text-muted-foreground → same switching, more muted
+                NO hardcoded hex colors here
+              */}
+              <div className="font-bold text-sm text-foreground leading-none tracking-wide">
+                ARTHUR TAKAM
+              </div>
+              <div className="text-[10px] text-muted-foreground tracking-[0.08em] uppercase mt-0.5">
+                Portfolio
+              </div>
+            </div>
           </Link>
 
-          <div className="nav-container">
-            <div className="nav-bg"></div>
-            <nav>
-              <ul
-                ref={navRef}
-                className="nav-list"
-                onMouseLeave={handleMouseLeave}
+          {/* ── Desktop Nav ─────────────────────────────────────────────────── */}
+          <div
+            ref={navRef}
+            className="hidden md:flex gap-9"
+            onMouseLeave={handleMouseLeave}
+          >
+            {navItems.map(({ id, label, href }) => (
+              <Link
+                key={id}
+                href={href}
+                data-nav-id={id}
+                onMouseEnter={handleMouseEnter}
+                onClick={() => setActiveItem(id)}
+                className={`
+                  text-[13px] tracking-[0.02em] no-underline
+                  pb-0.5 border-b-2
+                  transition-colors duration-[var(--transition-fast)]
+                  ${id === activeItem
+                    ? 'font-bold text-primary border-primary'
+                    : 'font-medium text-muted-foreground border-transparent hover:text-foreground'
+                  }
+                `}
               >
-                {navItems.map((item) => (
-                  <li key={item.id} className="nav-item">
-                    <Link
-                      href={item.href}
-                      className={`nav-link ${activeItem === item.id ? 'active' : ''}`}
-                      data-nav-id={item.id}
-                      onMouseEnter={handleMouseEnter}
-                      onClick={() => handleClick(item.id)}
-                    >
-                      {item.label}
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </nav>
+                {label}
+              </Link>
+            ))}
           </div>
 
-          <div className="nav-actions">
-            {mounted && user ? (
-              <>
-                <Link href={dashboardPath} className="cta-btn">
-                  Dashboard
-                </Link>
+          {/* ── Right Side ──────────────────────────────────────────────────── */}
+          <div className="flex items-center gap-2 shrink-0">
 
-                <div className="user-menu" onClick={handleLogout} title="Logout">
-                  <div className="user-avatar">
-                    {user.firstname?.[0] || user.email?.[0]?.toUpperCase() || 'U'}
-                  </div>
-                  <div className="user-info">
-                    <span className="user-name">
-                      {user.firstname || user.email?.split('@')[0] || 'User'}
-                    </span>
-                    <span className="user-role">{user.role}</span>
-                  </div>
-                  <LogOut size={16} style={{ marginLeft: '4px', opacity: 0.7 }} />
-                </div>
-              </>
-            ) : mounted ? (
-              <>
-                <Link href="/login" className="login-btn">
-                  Login
-                </Link>
-                <Link href="/register" className="cta-btn">
-                  Apply Now
-                </Link>
-              </>
+            {/* Socials — desktop only */}
+            <div className="hidden md:flex items-center gap-2">
+              {socials.map((s) => <SocialBtn key={s.label} {...s} />)}
+            </div>
+
+            {/* Theme toggle — always visible */}
+            <ThemeToggle />
+
+            {/* Auth — your Button component, no raw styling */}
+            {mounted && !user ? (
+              <Button
+                variant="secondary"
+                size="sm"
+                className="hidden md:inline-flex rounded-full ml-1"
+                onClick={() => window.location.href = '/login'}
+              >
+                Login
+              </Button>
+            ) : mounted && user ? (
+              <Button
+                variant="primary"
+                size="sm"
+                className="hidden md:inline-flex rounded-full ml-1"
+                onClick={() => window.location.href = dashboardPath}
+              >
+                Dashboard
+              </Button>
             ) : null}
-          </div>
 
-          <button className="mobile-menu-btn" aria-label="Menu">
-            <Menu size={20} />
-          </button>
-        </div>
+            {/* Mobile hamburger */}
+            <button
+              className="
+                md:hidden neu-btn neu-raised-sm
+                w-9 h-9 rounded-full
+                flex items-center justify-center
+                text-muted-foreground
+              "
+              onClick={() => setMobileOpen(!mobileOpen)}
+              aria-label={mobileOpen ? 'Close menu' : 'Open menu'}
+            >
+              {mobileOpen ? <X size={18} /> : <Menu size={18} />}
+            </button>
+          </div>
+        </nav>
       </header>
+
+      {/* ── Mobile Drawer ─────────────────────────────────────────────────── */}
+      {mobileOpen && (
+        <div className="
+          fixed top-16 left-0 right-0 z-[999] md:hidden
+          bg-card border-b border-border shadow-neu-raised
+          px-6 py-6 animate-fade-in
+        ">
+          <div className="flex flex-col gap-1">
+
+            {/* Nav links */}
+            {navItems.map((item) => (
+              <Link
+                key={item.id}
+                href={item.href}
+                onClick={() => { setActiveItem(item.id); setMobileOpen(false); }}
+                className={`
+                  py-3 text-[15px] no-underline border-b border-border
+                  transition-all duration-[var(--transition-fast)]
+                  ${activeItem === item.id
+                    ? 'font-bold text-primary'
+                    : 'font-medium text-muted-foreground'
+                  }
+                `}
+              >
+                {item.label}
+              </Link>
+            ))}
+
+            {/* Socials row */}
+            <div className="flex gap-3 pt-4">
+              {socials.map((s) => <SocialBtn key={s.label} {...s} />)}
+            </div>
+
+            {/* Auth */}
+            <div className="pt-3">
+              {mounted && !user && (
+                <Button
+                  variant="primary"
+                  size="sm"
+                  className="rounded-full"
+                  onClick={() => { window.location.href = '/login'; setMobileOpen(false); }}
+                >
+                  Login
+                </Button>
+              )}
+              {mounted && user && (
+                <Button
+                  variant="primary"
+                  size="sm"
+                  className="rounded-full"
+                  onClick={() => { window.location.href = dashboardPath; setMobileOpen(false); }}
+                >
+                  Dashboard
+                </Button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Fixed header spacer — same height as header */}
+      <div className="h-16" aria-hidden="true" />
     </>
-  )
+  );
 }

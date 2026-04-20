@@ -3,7 +3,7 @@
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import Image from "next/image"
-import { Button } from "@/components/ui/button"
+import { Button } from "@/components/ui/existing/button"
 import { LogIn, UserPlus } from "lucide-react"
 import { useAuthStore } from "@/lib/store/auth"  // ✅ FIXED
 

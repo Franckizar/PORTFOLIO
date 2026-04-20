@@ -1,5 +1,6 @@
-import MarketingHeader from '@/components/marketing/Marketingheader'
+// import PortfolioHeader from '@/components/marketing/PortfolioHeader'?
 import MarketingFooter from '@/components/auth/Authfooter'
+import PortfolioHeader from '@/components/marketing/PortfolioHeader'
 
 export default function MarketingLayout({
   children,
@@ -7,21 +8,17 @@ export default function MarketingLayout({
   children: React.ReactNode
 }) {
   return (
-    <>
-      {/* ✅ Body padding lives HERE - only affects marketing pages */}
-      <style>{`
-        body {
-          padding-top: 140px;
-          font-family: 'Rajdhani', 'Poppins', sans-serif;
-          background: #0a0a0f;
-        }
-        @media (max-width: 768px) {
-          body { padding-top: 120px; }
-        }
-      `}</style>
-      <MarketingHeader />
-      <main>{children}</main>
+    <div className="min-h-screen bg-background font-sans">
+      <PortfolioHeader />
+      {/*
+        pt-16 = 64px — matches the fixed header height exactly.
+        The header already renders its own <div className="h-16"> spacer,
+        so this wrapper just ensures page content starts below it.
+      */}
+      <main className="pt-16">
+        {children}
+      </main>
       <MarketingFooter />
-    </>
+    </div>
   )
 }

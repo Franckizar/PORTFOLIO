@@ -1,7 +1,7 @@
 "use client"
 
-import { Card, CardDescription, CardHeader, CardTitle, CardContent, CardFooter } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
+import { Card, CardDescription, CardHeader, CardTitle, CardContent, CardFooter } from "@/components/ui/existing/card"
+import { Button } from "@/components/ui/existing/button"
 import Image from "next/image"
 import Link from "next/link"
 
