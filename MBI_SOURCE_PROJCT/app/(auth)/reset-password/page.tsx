@@ -1,26 +1,66 @@
 // app/(auth)/reset-password/page.tsx
-'use client'
+"use client";
 
-import { useState, useEffect } from 'react'
-import { useSearchParams, useRouter } from 'next/navigation'
-import { useForm } from 'react-hook-form'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { AlertCircle, CheckCircle, Lock, Zap, ArrowLeft } from 'lucide-react'
-import { Alert, AlertDescription } from '@/components/ui/existing/alert'
-import { Button } from '@/components/ui/existing/button'
-import { Input } from '@/components/ui/existing/input'
-import { authApi } from '@/lib/api/auth'
-import { resetPasswordSchema, type ResetPasswordFormData } from '@/lib/validations/auth'
+import { useState, useEffect } from "react";
+import { useSearchParams, useRouter } from "next/navigation";
+import Link from "next/link";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { Lock, ArrowLeft, AlertCircle, CheckCircle2 } from "lucide-react";
+import { Button } from "@/components/ui/ui/Button";
+import { authApi } from "@/lib/api/auth";
+import { resetPasswordSchema, type ResetPasswordFormData } from "@/lib/validations/auth";
+
+// ─── Halftone Dots ───────────────────────────────────────────────────────────
+function HalftoneDots({ fill = "var(--neu-primary)", size = 120, className = "" }) {
+  const dots = [];
+  const spacing = 12;
+  for (let r = 0; r < Math.ceil(size / spacing); r++) {
+    for (let c = 0; c < Math.ceil(size / spacing); c++) {
+      const x = c * spacing;
+      const y = r * spacing;
+      const dist = Math.sqrt((x - size / 2) ** 2 + (y - size / 2) ** 2);
+      const maxDist = size * 0.5;
+      const radius = Math.max(0.5, 3.5 * (1 - dist / maxDist));
+      if (dist < maxDist) {
+        dots.push(<circle key={`${r}-${c}`} cx={x} cy={y} r={radius} fill={fill} />);
+      }
+    }
+  }
+  return (
+    <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} className={className} aria-hidden="true">
+      {dots}
+    </svg>
+  );
+}
+
+// ─── Wave lines ───────────────────────────────────────────────────────────────
+function WaveLines({ stroke = "var(--neu-primary)", className = "" }) {
+  return (
+    <svg width="80" height="40" viewBox="0 0 80 40" className={className} aria-hidden="true">
+      {[0, 12, 24].map((y, i) => (
+        <path
+          key={i}
+          d={`M0 ${y + 6} Q20 ${y} 40 ${y + 6} Q60 ${y + 12} 80 ${y + 6}`}
+          fill="none"
+          stroke={stroke}
+          strokeWidth="2"
+          strokeLinecap="round"
+          opacity={0.4 - i * 0.08}
+        />
+      ))}
+    </svg>
+  );
+}
 
 export default function ResetPasswordPage() {
-  const searchParams = useSearchParams()
-  const router = useRouter()
-  
-  const [token, setToken] = useState<string | null>(null)
-  const [error, setError] = useState('')
-  const [success, setSuccess] = useState('')
-  const [isLoading, setIsLoading] = useState(false)
-  const [mounted, setMounted] = useState(false)
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const token = searchParams.get("token");
+
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
 
   const {
     register,
@@ -28,215 +68,167 @@ export default function ResetPasswordPage() {
     formState: { errors },
   } = useForm<ResetPasswordFormData>({
     resolver: zodResolver(resetPasswordSchema),
-  })
+  });
 
   useEffect(() => {
-    setMounted(true)
-    const tokenParam = searchParams.get('token')
-    setToken(tokenParam)
-    
-    if (!tokenParam) {
-      setError('Invalid or missing reset token')
+    if (!token) {
+      setError("Invalid or missing reset token");
     }
-  }, [searchParams])
+  }, [token]);
 
   const onSubmit = async (data: ResetPasswordFormData) => {
-    if (!token) return
+    if (!token) return;
 
-    setIsLoading(true)
-    setError('')
-    setSuccess('')
+    setIsLoading(true);
+    setError("");
+    setSuccess("");
 
     try {
-      await authApi.resetPassword(token, data.password)
-      setSuccess('Password reset successfully! Redirecting to login...')
-      
-      setTimeout(() => {
-        router.push('/login')
-      }, 2000)
-    } catch (err: any) {
-      setError(err.response?.data?.message || 'Password reset failed')
-    } finally {
-      setIsLoading(false)
-    }
-  }
+      await authApi.resetPassword(token, data.password);
+      setSuccess("Password reset successfully! Redirecting to login...");
 
-  if (!mounted) {
-    return (
-      <div className="relative min-h-screen flex items-center justify-center bg-[#0a0a0f]">
-        <div className="absolute inset-0 bg-black/60"></div>
-        <div 
-          className="absolute inset-0 opacity-30 mix-blend-overlay"
-          style={{
-            backgroundImage: `url('/textures/texture.jpg')`,
-            backgroundRepeat: 'repeat',
-            backgroundSize: '200px 200px',
-          }}
-        />
-        <div className="relative z-10 w-10 h-10 border-2 border-[#ff6b35] border-t-transparent rounded-full animate-spin" 
-          style={{ boxShadow: '0 0 20px rgba(255,107,53,0.5)' }}
-        />
-      </div>
-    )
-  }
+      setTimeout(() => {
+        router.push("/login");
+      }, 2000);
+    } catch (err: any) {
+      setError(err.response?.data?.message || "Password reset failed. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   if (!token) {
     return (
-      <div className="relative min-h-screen flex items-center justify-center p-4 bg-[#0a0a0f]">
-        <div className="absolute inset-0 bg-black/60"></div>
-        <div 
-          className="absolute inset-0 opacity-30 mix-blend-overlay"
-          style={{
-            backgroundImage: `url('/textures/texture.jpg')`,
-            backgroundRepeat: 'repeat',
-            backgroundSize: '200px 200px',
-          }}
-        />
-        <div className="relative z-10 w-full max-w-md">
-          <div className="bg-[#0a0a0f]/80 backdrop-blur-xl border border-[#ff6b35]/30 rounded-2xl p-8 text-center">
-            <AlertCircle className="w-12 h-12 text-[#ff6b35] mx-auto mb-4" />
-            <h2 className="text-xl font-black text-white mb-2">INVALID LINK</h2>
-            <p className="text-gray-400 text-sm mb-6">This reset link is invalid or has expired.</p>
-            <Button 
-              onClick={() => router.push('/forgot-password')}
-              className="w-full py-2 bg-gradient-to-r from-[#ff6b35] to-[#ff0000] text-white font-bold rounded-xl"
-            >
-              REQUEST NEW LINK
-            </Button>
+      <div className="min-h-[calc(100vh-64px)] flex items-center justify-center py-12 px-4">
+        <div className="fixed left-0 top-16 bottom-0 w-1.5 bg-foreground opacity-80" />
+        <div className="w-full max-w-[440px]">
+          <div className="relative bg-card rounded-2xl border-2 border-border shadow-neu-raised p-8 text-center">
+            <div className="absolute top-0 right-0 opacity-[0.08] pointer-events-none">
+              <HalftoneDots size={100} />
+            </div>
+            <AlertCircle className="w-12 h-12 text-primary mx-auto mb-4" />
+            <h2 className="text-xl font-black text-foreground mb-2">Invalid Link</h2>
+            <p className="text-sm text-muted-foreground mb-6">
+              This reset link is invalid or has expired.
+            </p>
+            <Link href="/forgot-password">
+              <Button variant="primary" className="rounded-xl">
+                Request New Link
+              </Button>
+            </Link>
           </div>
         </div>
       </div>
-    )
+    );
   }
 
   return (
-    <div className="relative min-h-screen flex items-center justify-center p-4 overflow-hidden bg-[#0a0a0f]">
-      {/* Background */}
-      <div className="absolute inset-0 z-0">
-        <div className="absolute inset-0 bg-black/60"></div>
-        <div 
-          className="absolute inset-0 opacity-30 mix-blend-overlay"
-          style={{
-            backgroundImage: `url('/textures/texture.jpg')`,
-            backgroundRepeat: 'repeat',
-            backgroundSize: '200px 200px',
-          }}
-        />
-        <div 
-          className="absolute inset-0" 
-          style={{
-            background: 'radial-gradient(circle at center, rgba(255,107,53,0.15) 0%, rgba(0,0,0,0.9) 70%)'
-          }}
-        />
-      </div>
+    <div className="min-h-[calc(100vh-64px)] flex items-center justify-center py-12 px-4">
+      <div className="fixed left-0 top-16 bottom-0 w-1.5 bg-foreground opacity-80" />
 
-      {/* Reset Card */}
-      <div className="relative z-10 w-full max-w-md">
-        <div className="absolute -inset-1 bg-gradient-to-r from-[#ff6b35] via-[#ff0000] to-[#ff6b35] rounded-2xl opacity-20 blur-xl"></div>
-        
-        <div className="relative bg-[#0a0a0f]/80 backdrop-blur-xl border border-[#ff6b35]/30 rounded-2xl p-8 shadow-2xl">
-          
+      <div className="w-full max-w-[440px]">
+        <div className="relative bg-card rounded-2xl border-2 border-border shadow-neu-raised p-8 md:p-10">
+          {/* Decorations */}
+          <div className="absolute top-0 right-0 opacity-[0.08] pointer-events-none">
+            <HalftoneDots size={100} />
+          </div>
+          <div className="absolute bottom-4 left-4 opacity-[0.06] pointer-events-none rotate-180">
+            <HalftoneDots size={80} />
+          </div>
+          <div className="absolute top-6 left-6 pointer-events-none opacity-20">
+            <WaveLines />
+          </div>
+
           {/* Header */}
-          <div className="text-center mb-6">
-            <button
-              onClick={() => router.push('/login')}
-              className="absolute left-4 top-4 text-gray-400 hover:text-[#ff6b35] transition-colors"
-            >
-              <ArrowLeft className="w-4 h-4" />
-            </button>
-            
-            <div className="inline-flex mb-3">
-              <div className="relative">
-                <Lock className="w-8 h-8 text-[#ff6b35]" 
-                  style={{ filter: 'drop-shadow(0 0 10px rgba(255,107,53,0.8))' }}
-                />
-                <div className="absolute inset-0 blur-lg bg-[#ff6b35]/30 rounded-full"></div>
-              </div>
+          <div className="text-center mb-8 relative z-10">
+            <div className="inline-flex items-center gap-2 text-[11px] font-semibold text-primary uppercase tracking-[0.12em] mb-3">
+              <span className="w-6 h-0.5 bg-primary rounded-full" />
+              Security First
             </div>
-            <h1 className="text-3xl font-black text-white mb-1 tracking-tight">
-              RESET 
-              <span className="text-[#ff6b35] ml-2" 
-                style={{ textShadow: '0 0 20px rgba(255,107,53,0.5)' }}
-              >PASSWORD</span>
+            <h1 className="text-3xl md:text-4xl font-black text-foreground leading-[1.2] tracking-[-0.02em] mb-2">
+              Create new
+              <br />
+              <span className="text-primary">password</span>
             </h1>
-            <p className="text-gray-400 text-xs">Enter your new password below</p>
+            <p className="text-sm text-muted-foreground mt-2">
+              Choose a strong password for your account
+            </p>
           </div>
 
           {/* Messages */}
           {success && (
-            <Alert className="mb-4 bg-green-500/10 border-green-500/30 text-green-200">
-              <CheckCircle className="h-4 w-4" />
-              <AlertDescription className="text-sm">{success}</AlertDescription>
-            </Alert>
+            <div className="mb-4 p-3 rounded-xl bg-green-500/10 border border-green-500/30 flex items-start gap-2">
+              <CheckCircle2 className="w-4 h-4 text-green-500 shrink-0 mt-0.5" />
+              <p className="text-sm text-green-500">{success}</p>
+            </div>
           )}
 
           {error && (
-            <Alert variant="destructive" className="mb-4 bg-red-500/10 border-red-500/30 text-red-200">
-              <AlertCircle className="h-4 w-4" />
-              <AlertDescription className="text-sm">{error}</AlertDescription>
-            </Alert>
+            <div className="mb-4 p-3 rounded-xl bg-red-500/10 border border-red-500/30 flex items-start gap-2">
+              <AlertCircle className="w-4 h-4 text-red-500 shrink-0 mt-0.5" />
+              <p className="text-sm text-red-500">{error}</p>
+            </div>
           )}
 
           {/* Form */}
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-            {/* New Password */}
-            <div className="relative group">
-              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-3 h-3 text-gray-500 group-focus-within:text-[#ff6b35] transition-colors" />
-              <Input
-                type="password"
-                placeholder="New Password (min 6 characters)"
-                className="w-full pl-8 pr-3 py-2.5 text-sm bg-[#1a1a24]/50 border border-[#ff6b35]/20 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-[#ff6b35] focus:ring-1 focus:ring-[#ff6b35]/30 transition-all"
-                {...register('password')}
-                disabled={isLoading}
-              />
-              {errors.password && (
-                <p className="mt-1 text-xs text-[#ff6b35]">{errors.password.message}</p>
-              )}
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-5 relative z-10">
+            <div>
+              <label className="block text-[13px] font-semibold text-foreground mb-1.5 tracking-wide">
+                New Password
+              </label>
+              <div className="relative">
+                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <input
+                  type="password"
+                  placeholder="Min. 6 characters"
+                  className="w-full pl-10 pr-4 py-3 rounded-xl bg-background border-2 border-border text-foreground text-[15px] placeholder:text-muted-foreground/50 focus:outline-none focus:border-primary transition-colors"
+                  {...register("password")}
+                  disabled={isLoading}
+                />
+              </div>
+              {errors.password && <p className="mt-1 text-xs text-red-500">{errors.password.message}</p>}
             </div>
 
-            {/* Confirm Password */}
-            <div className="relative group">
-              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-3 h-3 text-gray-500 group-focus-within:text-[#ff6b35] transition-colors" />
-              <Input
-                type="password"
-                placeholder="Confirm New Password"
-                className="w-full pl-8 pr-3 py-2.5 text-sm bg-[#1a1a24]/50 border border-[#ff6b35]/20 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-[#ff6b35] focus:ring-1 focus:ring-[#ff6b35]/30 transition-all"
-                {...register('confirmPassword')}
-                disabled={isLoading}
-              />
-              {errors.confirmPassword && (
-                <p className="mt-1 text-xs text-[#ff6b35]">{errors.confirmPassword.message}</p>
-              )}
+            <div>
+              <label className="block text-[13px] font-semibold text-foreground mb-1.5 tracking-wide">
+                Confirm Password
+              </label>
+              <div className="relative">
+                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <input
+                  type="password"
+                  placeholder="Confirm your new password"
+                  className="w-full pl-10 pr-4 py-3 rounded-xl bg-background border-2 border-border text-foreground text-[15px] placeholder:text-muted-foreground/50 focus:outline-none focus:border-primary transition-colors"
+                  {...register("confirmPassword")}
+                  disabled={isLoading}
+                />
+              </div>
+              {errors.confirmPassword && <p className="mt-1 text-xs text-red-500">{errors.confirmPassword.message}</p>}
             </div>
 
-            {/* Submit Button */}
             <Button
               type="submit"
+              variant="primary"
+              size="lg"
+              className="w-full rounded-xl"
               disabled={isLoading}
-              className="relative w-full py-2.5 mt-2 bg-gradient-to-r from-[#ff6b35] to-[#ff0000] text-white font-bold rounded-xl overflow-hidden group text-sm"
             >
-              <span className="absolute inset-0 bg-white opacity-0 group-hover:opacity-20 transition-opacity"></span>
-              <span className="relative z-10 flex items-center justify-center gap-2">
-                {isLoading ? (
-                  <>
-                    <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                    RESETTING...
-                  </>
-                ) : (
-                  <>
-                    <Zap className="w-3 h-3" />
-                    RESET PASSWORD
-                    <Zap className="w-3 h-3" />
-                  </>
-                )}
-              </span>
+              {isLoading ? "Resetting..." : "Reset Password"}
             </Button>
           </form>
 
-          {/* Bottom accent */}
-          <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-16 h-px bg-gradient-to-r from-transparent via-[#ff6b35] to-transparent opacity-50"></div>
+          {/* Back to Login */}
+          <div className="mt-6 text-center relative z-10">
+            <Link
+              href="/login"
+              className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              Back to Login
+            </Link>
+          </div>
         </div>
       </div>
     </div>
-  )
+  );
 }

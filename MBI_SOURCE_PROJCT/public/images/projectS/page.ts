@@ -1,1 +1,0 @@
-c:\Users\takam\Videos\Captures\MBI Digital Agency - Google Chrome 4_20_2026 4_01_42 PM.png

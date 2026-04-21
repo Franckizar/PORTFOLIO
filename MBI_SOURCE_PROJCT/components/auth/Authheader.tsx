@@ -1,58 +1,151 @@
 // components/auth/AuthHeader.tsx
+"use client";
+
 import Link from 'next/link';
-import { Zap } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { Sun, Moon } from 'lucide-react';
+
+// ─── Halftone Dots decoration ───────────────────────────────────────────────
+function HalftoneDots({ size = 80 }: { size?: number }) {
+  const dots = [];
+  const spacing = 10;
+  for (let r = 0; r < Math.ceil(size / spacing); r++) {
+    for (let c = 0; c < Math.ceil(size / spacing); c++) {
+      const x = c * spacing;
+      const y = r * spacing;
+      const dist = Math.sqrt((x - size / 2) ** 2 + (y - size / 2) ** 2);
+      const maxDist = size * 0.5;
+      const radius = Math.max(0.5, 2.5 * (1 - dist / maxDist));
+      if (dist < maxDist) {
+        dots.push(
+          <circle key={`${r}-${c}`} cx={x} cy={y} r={radius} fill="var(--neu-primary)" />
+        );
+      }
+    }
+  }
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox={`0 0 ${size} ${size}`}
+      className="absolute opacity-[0.08] pointer-events-none"
+      aria-hidden="true"
+    >
+      {dots}
+    </svg>
+  );
+}
+
+// ─── Theme Toggle ─────────────────────────────────────────────────────────────
+function ThemeToggle() {
+  const [isDark, setIsDark] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    const saved = localStorage.getItem('portfolio-theme');
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    const shouldBeDark = saved === 'dark' || (!saved && prefersDark);
+    document.documentElement.classList.toggle('dark', shouldBeDark);
+    setIsDark(shouldBeDark);
+    setMounted(true);
+  }, []);
+
+  const toggle = () => {
+    const next = !isDark;
+    document.documentElement.classList.toggle('dark', next);
+    localStorage.setItem('portfolio-theme', next ? 'dark' : 'light');
+    setIsDark(next);
+  };
+
+  if (!mounted) return (
+    <div className="w-9 h-9 rounded-full neu-raised-sm neu-skeleton shrink-0" />
+  );
+
+  return (
+    <button
+      onClick={toggle}
+      aria-label={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
+      className="
+        neu-btn neu-raised-sm w-9 h-9 rounded-full shrink-0
+        flex items-center justify-center
+        text-muted-foreground hover:text-primary
+        transition-colors duration-[var(--transition-fast)]
+      "
+    >
+      {isDark
+        ? <Sun size={16} className="text-yellow-400" />
+        : <Moon size={16} />
+      }
+    </button>
+  );
+}
 
 export default function AuthHeader() {
   return (
-    <header className="relative z-50 border-b border-[#ff6b35]/20 bg-[#0a0a0f]/80 backdrop-blur-xl">
-      {/* Subtle texture overlay */}
-      <div className="absolute inset-0 opacity-10 pointer-events-none"
-        style={{
-          backgroundImage: `url('/textures/texture.jpg')`,
-          backgroundRepeat: 'repeat',
-          backgroundSize: '100px 100px',
-          mixBlendMode: 'overlay',
-        }}
-      />
-      
-      {/* Saber glow line at bottom */}
-      <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-[#ff6b35] to-transparent opacity-50"></div>
-      
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative">
-        <div className="flex items-center justify-between h-16">
-          {/* Logo with saber glow */}
-          <Link href="/" className="group relative">
-            <div className="absolute -inset-2 bg-gradient-to-r from-[#ff6b35] to-[#ff0000] rounded-lg opacity-0 group-hover:opacity-20 blur-lg transition-opacity"></div>
-            <span className="relative text-xl font-black text-white">
-              MBI<span className="text-[#ff6b35]" style={{ textShadow: '0 0 10px rgba(255,107,53,0.5)' }}>⚡</span>AGENCY
-            </span>
+    <header className="fixed top-0 left-0 right-0 z-[1000] h-16 bg-card border-b border-border">
+      {/* Halftone corner decoration */}
+      <div className="absolute top-0 right-0 w-[120px] h-16 pointer-events-none overflow-hidden">
+        <HalftoneDots size={80} />
+      </div>
+
+      <div className="flex items-center justify-between h-full px-6 md:px-10 mx-auto max-w-[1200px] relative z-10">
+        {/* Logo */}
+        <Link href="/" className="flex items-center gap-2.5 no-underline shrink-0 group">
+          <div className="
+            w-[38px] h-[38px] rounded-full shrink-0
+            flex items-center justify-center
+            neu-btn neu-raised-sm
+            bg-neu-primary-gradient
+            group-hover:scale-105 transition-transform
+          ">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path
+                d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"
+                stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+              />
+            </svg>
+          </div>
+          <div>
+            <div className="font-bold text-sm text-foreground leading-none tracking-wide">
+              ARTHUR TAKAM
+            </div>
+            <div className="text-[10px] text-muted-foreground tracking-[0.08em] uppercase mt-0.5">
+              Portfolio
+            </div>
+          </div>
+        </Link>
+
+        {/* Navigation */}
+        <nav className="flex items-center gap-3">
+          <Link
+            href="/login"
+            className="
+              text-[13px] font-medium tracking-[0.02em] no-underline
+              text-muted-foreground hover:text-foreground
+              transition-colors duration-[var(--transition-fast)]
+              px-3 py-1.5
+            "
+          >
+            Login
           </Link>
-          
-          <nav className="flex items-center gap-3">
-            <Link 
-              href="/login" 
-              className="relative px-4 py-2 text-gray-300 hover:text-white transition-colors group"
-            >
-              <span className="relative z-10">LOGIN</span>
-              <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-[#ff6b35] group-hover:w-full transition-all"></span>
-            </Link>
-            
-            <Link 
-              href="/register" 
-              className="relative px-4 py-2 bg-transparent border-2 border-[#ff6b35] text-white font-bold rounded-lg overflow-hidden group"
-              style={{
-                boxShadow: '0 0 15px rgba(255,107,53,0.3)',
-              }}
-            >
-              <span className="absolute inset-0 bg-gradient-to-r from-[#ff6b35] to-[#ff0000] opacity-0 group-hover:opacity-100 transition-opacity"></span>
-              <span className="relative z-10 flex items-center gap-2">
-                <Zap className="w-4 h-4" />
-                SIGN UP
-                <Zap className="w-4 h-4" />
-              </span>
-            </Link>
-          </nav>
-        </div>
+
+          <Link
+            href="/register"
+            className="
+              text-[13px] font-semibold tracking-[0.02em] no-underline
+              px-4 py-1.5 rounded-full
+              bg-primary text-primary-foreground
+              hover:bg-primary/90
+              transition-all duration-[var(--transition-fast)]
+              shadow-neu-raised-sm
+            "
+          >
+            Sign Up
+          </Link>
+
+          {/* Theme toggle */}
+          <ThemeToggle />
+        </nav>
       </div>
     </header>
   );

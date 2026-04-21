@@ -1,27 +1,68 @@
 // app/(auth)/verify-email/page.tsx
-'use client'
+"use client";
 
-import { useState, useEffect } from 'react'
-import { useRouter, useSearchParams } from 'next/navigation'
-import { useForm } from 'react-hook-form'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { Mail, Loader2, AlertCircle, CheckCircle, Zap, RefreshCw } from 'lucide-react'
-import { Alert, AlertDescription } from '@/components/ui/existing/alert'
-import { Button } from '@/components/ui/existing/button'
-import { authApi } from '@/lib/api/auth'
-import { verificationSchema, type VerificationFormData } from '@/lib/validations/auth'
+import { useState, useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { Mail, AlertCircle, CheckCircle2, RefreshCw, ArrowLeft } from "lucide-react";
+import { Button } from "@/components/ui/ui/Button";
+import { authApi } from "@/lib/api/auth";
+import { verificationSchema, type VerificationFormData } from "@/lib/validations/auth";
+
+// ─── Halftone Dots ───────────────────────────────────────────────────────────
+function HalftoneDots({ fill = "var(--neu-primary)", size = 120, className = "" }) {
+  const dots = [];
+  const spacing = 12;
+  for (let r = 0; r < Math.ceil(size / spacing); r++) {
+    for (let c = 0; c < Math.ceil(size / spacing); c++) {
+      const x = c * spacing;
+      const y = r * spacing;
+      const dist = Math.sqrt((x - size / 2) ** 2 + (y - size / 2) ** 2);
+      const maxDist = size * 0.5;
+      const radius = Math.max(0.5, 3.5 * (1 - dist / maxDist));
+      if (dist < maxDist) {
+        dots.push(<circle key={`${r}-${c}`} cx={x} cy={y} r={radius} fill={fill} />);
+      }
+    }
+  }
+  return (
+    <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} className={className} aria-hidden="true">
+      {dots}
+    </svg>
+  );
+}
+
+// ─── Wave lines ───────────────────────────────────────────────────────────────
+function WaveLines({ stroke = "var(--neu-primary)", className = "" }) {
+  return (
+    <svg width="80" height="40" viewBox="0 0 80 40" className={className} aria-hidden="true">
+      {[0, 12, 24].map((y, i) => (
+        <path
+          key={i}
+          d={`M0 ${y + 6} Q20 ${y} 40 ${y + 6} Q60 ${y + 12} 80 ${y + 6}`}
+          fill="none"
+          stroke={stroke}
+          strokeWidth="2"
+          strokeLinecap="round"
+          opacity={0.4 - i * 0.08}
+        />
+      ))}
+    </svg>
+  );
+}
 
 export default function VerifyEmailPage() {
-  const router = useRouter()
-  const searchParams = useSearchParams()
-  const email = searchParams.get('email') || ''
-  
-  const [error, setError] = useState('')
-  const [success, setSuccess] = useState('')
-  const [isLoading, setIsLoading] = useState(false)
-  const [isResending, setIsResending] = useState(false)
-  const [canResend, setCanResend] = useState(true)
-  const [countdown, setCountdown] = useState(0)
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const email = searchParams.get("email") || "";
+
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [isResending, setIsResending] = useState(false);
+  const [canResend, setCanResend] = useState(true);
+  const [countdown, setCountdown] = useState(0);
 
   const {
     register,
@@ -29,211 +70,173 @@ export default function VerifyEmailPage() {
     formState: { errors },
   } = useForm<VerificationFormData>({
     resolver: zodResolver(verificationSchema),
-    defaultValues: {
-      email: email,
-    },
-  })
+    defaultValues: { email },
+  });
 
   useEffect(() => {
     if (countdown > 0) {
-      const timer = setTimeout(() => setCountdown(countdown - 1), 1000)
-      return () => clearTimeout(timer)
+      const timer = setTimeout(() => setCountdown(countdown - 1), 1000);
+      return () => clearTimeout(timer);
     } else {
-      setCanResend(true)
+      setCanResend(true);
     }
-  }, [countdown])
+  }, [countdown]);
 
   const onSubmit = async (data: VerificationFormData) => {
-    setIsLoading(true)
-    setError('')
-    setSuccess('')
-    
+    setIsLoading(true);
+    setError("");
+    setSuccess("");
+
     try {
-      const response = await authApi.verifyEmail(data)
-      setSuccess(response.data.message || 'Email verified successfully!')
-      
+      const response = await authApi.verifyEmail(data);
+      setSuccess(response.data.message || "Email verified successfully!");
+
       setTimeout(() => {
-        router.push('/login')
-      }, 2000)
-      
+        router.push("/login");
+      }, 2000);
     } catch (err: any) {
-      const errorMessage = err.response?.data?.error 
-        || err.response?.data?.message 
-        || 'Verification failed. Please try again.'
-      setError(errorMessage)
+      setError(err.response?.data?.error || err.response?.data?.message || "Verification failed. Please try again.");
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   const handleResendCode = async () => {
-    if (!canResend) return
-    
-    setIsResending(true)
-    setError('')
-    setSuccess('')
-    
+    if (!canResend) return;
+
+    setIsResending(true);
+    setError("");
+    setSuccess("");
+
     try {
-      const response = await authApi.resendVerificationCode({ email })
-      setSuccess(response.data.message || 'Verification code sent! Check your email.')
-      setCanResend(false)
-      setCountdown(60)
-      
+      const response = await authApi.resendVerificationCode({ email });
+      setSuccess(response.data.message || "Verification code sent! Check your email.");
+      setCanResend(false);
+      setCountdown(60);
     } catch (err: any) {
-      const errorMessage = err.response?.data?.error 
-        || err.response?.data?.message 
-        || 'Failed to resend code. Please try again.'
-      setError(errorMessage)
+      setError(err.response?.data?.error || err.response?.data?.message || "Failed to resend code. Please try again.");
     } finally {
-      setIsResending(false)
+      setIsResending(false);
     }
-  }
+  };
 
   return (
-    <div className="relative min-h-screen flex items-center justify-center p-4 overflow-hidden bg-[#0a0a0f]">
-      {/* Background */}
-      <div className="absolute inset-0 z-0">
-        <div className="absolute inset-0 bg-black/60"></div>
-        <div 
-          className="absolute inset-0 opacity-30 mix-blend-overlay"
-          style={{
-            backgroundImage: `url('/textures/texture.jpg')`,
-            backgroundRepeat: 'repeat',
-            backgroundSize: '200px 200px',
-          }}
-        />
-        <div 
-          className="absolute inset-0 opacity-20 mix-blend-soft-light"
-          style={{
-            backgroundImage: `url('/textures/texture1.jpg')`,
-            backgroundRepeat: 'repeat',
-            backgroundSize: '300px 300px',
-          }}
-        />
-        <div 
-          className="absolute inset-0" 
-          style={{
-            background: 'radial-gradient(circle at center, rgba(255,107,53,0.15) 0%, rgba(0,0,0,0.9) 70%)'
-          }}
-        />
-      </div>
+    <div className="min-h-[calc(100vh-64px)] flex items-center justify-center py-12 px-4">
+      {/* Navy left accent strip */}
+      <div className="fixed left-0 top-16 bottom-0 w-1.5 bg-foreground opacity-80" />
 
-      {/* Verify Card */}
-      <div className="relative z-10 w-full max-w-md">
-        <div className="absolute -inset-1 bg-gradient-to-r from-[#ff6b35] via-[#ff0000] to-[#ff6b35] rounded-2xl opacity-20 blur-xl"></div>
-        
-        <div className="relative bg-[#0a0a0f]/80 backdrop-blur-xl border border-[#ff6b35]/30 rounded-2xl p-8 shadow-2xl">
-          
+      <div className="w-full max-w-[440px]">
+        <div className="relative bg-card rounded-2xl border-2 border-border shadow-neu-raised p-8 md:p-10">
+          {/* Decorations */}
+          <div className="absolute top-0 right-0 opacity-[0.08] pointer-events-none">
+            <HalftoneDots size={100} />
+          </div>
+          <div className="absolute bottom-4 left-4 opacity-[0.06] pointer-events-none rotate-180">
+            <HalftoneDots size={80} />
+          </div>
+          <div className="absolute top-6 left-6 pointer-events-none opacity-20">
+            <WaveLines />
+          </div>
+
           {/* Header */}
-          <div className="text-center mb-6">
-            <div className="inline-flex mb-3">
-              <div className="relative">
-                <Mail className="w-10 h-10 text-[#ff6b35]" 
-                  style={{ filter: 'drop-shadow(0 0 10px rgba(255,107,53,0.8))' }}
-                />
-                <div className="absolute inset-0 blur-lg bg-[#ff6b35]/30 rounded-full"></div>
-              </div>
+          <div className="text-center mb-8 relative z-10">
+            <div className="inline-flex items-center gap-2 text-[11px] font-semibold text-primary uppercase tracking-[0.12em] mb-3">
+              <span className="w-6 h-0.5 bg-primary rounded-full" />
+              Verify Your Identity
             </div>
-            <h1 className="text-3xl font-black text-white mb-1 tracking-tight">
-              VERIFY 
-              <span className="text-[#ff6b35] ml-2" 
-                style={{ textShadow: '0 0 20px rgba(255,107,53,0.5)' }}
-              >EMAIL</span>
+            <h1 className="text-3xl md:text-4xl font-black text-foreground leading-[1.2] tracking-[-0.02em] mb-2">
+              Check your
+              <br />
+              <span className="text-primary">inbox</span>
             </h1>
-            <p className="text-gray-400 text-xs">
-              We&apos;ve sent a 6-digit code to<br />
-              <span className="text-[#ff6b35] font-bold">{email}</span>
+            <p className="text-sm text-muted-foreground mt-2">
+              We've sent a 6-digit code to<br />
+              <span className="font-semibold text-primary">{email}</span>
             </p>
           </div>
 
           {/* Messages */}
           {success && (
-            <Alert className="mb-4 bg-green-500/10 border-green-500/30 text-green-200">
-              <CheckCircle className="h-4 w-4" />
-              <AlertDescription className="text-sm">{success}</AlertDescription>
-            </Alert>
+            <div className="mb-4 p-3 rounded-xl bg-green-500/10 border border-green-500/30 flex items-start gap-2">
+              <CheckCircle2 className="w-4 h-4 text-green-500 shrink-0 mt-0.5" />
+              <p className="text-sm text-green-500">{success}</p>
+            </div>
           )}
 
           {error && (
-            <Alert variant="destructive" className="mb-4 bg-red-500/10 border-red-500/30 text-red-200">
-              <AlertCircle className="h-4 w-4" />
-              <AlertDescription className="text-sm">{error}</AlertDescription>
-            </Alert>
+            <div className="mb-4 p-3 rounded-xl bg-red-500/10 border border-red-500/30 flex items-start gap-2">
+              <AlertCircle className="w-4 h-4 text-red-500 shrink-0 mt-0.5" />
+              <p className="text-sm text-red-500">{error}</p>
+            </div>
           )}
 
           {/* Form */}
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-            <input type="hidden" {...register('email')} />
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-5 relative z-10">
+            <input type="hidden" {...register("email")} />
 
-            {/* Code Input */}
-            <div className="relative group">
+            <div>
+              <label className="block text-[13px] font-semibold text-foreground mb-1.5 tracking-wide text-center">
+                Verification Code
+              </label>
               <input
                 type="text"
                 placeholder="• • • • • •"
                 maxLength={6}
-                className="w-full px-4 py-3 text-xl tracking-[8px] text-center font-mono bg-[#1a1a24]/50 border border-[#ff6b35]/20 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-[#ff6b35] focus:ring-1 focus:ring-[#ff6b35]/30 transition-all"
-                {...register('code')}
+                className="w-full px-4 py-3 text-2xl tracking-[0.5em] text-center font-mono bg-background border-2 border-border rounded-xl text-foreground placeholder:text-muted-foreground/30 focus:outline-none focus:border-primary transition-colors"
+                {...register("code")}
                 autoComplete="off"
                 autoFocus
                 disabled={isLoading}
               />
-              {errors.code && (
-                <p className="mt-1 text-xs text-[#ff6b35] text-center">{errors.code.message}</p>
-              )}
+              {errors.code && <p className="mt-1 text-xs text-red-500 text-center">{errors.code.message}</p>}
             </div>
 
-            {/* Submit Button */}
             <Button
               type="submit"
+              variant="primary"
+              size="lg"
+              icon={Mail}
+              iconPosition="right"
+              className="w-full rounded-xl"
               disabled={isLoading}
-              className="relative w-full py-2.5 bg-gradient-to-r from-[#ff6b35] to-[#ff0000] text-white font-bold rounded-xl overflow-hidden group text-sm"
             >
-              <span className="absolute inset-0 bg-white opacity-0 group-hover:opacity-20 transition-opacity"></span>
-              <span className="relative z-10 flex items-center justify-center gap-2">
-                {isLoading ? (
-                  <>
-                    <Loader2 className="w-3 h-3 animate-spin" />
-                    VERIFYING...
-                  </>
-                ) : (
-                  <>
-                    <Zap className="w-3 h-3" />
-                    VERIFY EMAIL
-                    <Zap className="w-3 h-3" />
-                  </>
-                )}
-              </span>
+              {isLoading ? "Verifying..." : "Verify Email"}
             </Button>
           </form>
 
           {/* Resend Section */}
-          <div className="mt-4 text-center">
-            <p className="text-xs text-gray-400 mb-2">Didn&apos;t receive the code?</p>
+          <div className="mt-6 text-center relative z-10">
+            <p className="text-xs text-muted-foreground mb-2">Didn't receive the code?</p>
             <button
               type="button"
               onClick={handleResendCode}
               disabled={!canResend || isResending}
-              className="text-[#ff6b35] text-sm font-semibold hover:underline disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-1 mx-auto"
+              className="text-primary text-sm font-semibold hover:underline disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-1 mx-auto transition-colors"
             >
-              <RefreshCw className={`w-3 h-3 ${isResending ? 'animate-spin' : ''}`} />
-              {isResending ? 'SENDING...' : canResend ? 'RESEND CODE' : `RESEND IN ${countdown}S`}
+              <RefreshCw className={`w-3 h-3 ${isResending ? "animate-spin" : ""}`} />
+              {isResending ? "Sending..." : canResend ? "Resend Code" : `Resend in ${countdown}s`}
             </button>
           </div>
 
           {/* Tips */}
-          <div className="mt-6 text-xs text-gray-500 text-center space-y-1">
-            <p className="flex items-center justify-center gap-1">
-              <Zap className="w-3 h-3 text-[#ff6b35]" /> Code expires in 15 minutes
-            </p>
-            <p className="flex items-center justify-center gap-1">
-              <Zap className="w-3 h-3 text-[#ff6b35]" /> 5 attempts remaining
+          <div className="mt-6 pt-4 border-t border-border text-center relative z-10">
+            <p className="text-xs text-muted-foreground">
+              Code expires in <span className="font-semibold text-primary">15 minutes</span>
             </p>
           </div>
 
-          {/* Bottom accent */}
-          <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-16 h-px bg-gradient-to-r from-transparent via-[#ff6b35] to-transparent opacity-50"></div>
+          {/* Back to Login */}
+          <div className="mt-4 text-center relative z-10">
+            <Link
+              href="/login"
+              className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              Back to Login
+            </Link>
+          </div>
         </div>
       </div>
     </div>
-  )
+  );
 }
