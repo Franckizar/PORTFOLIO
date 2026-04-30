@@ -1,24 +1,25 @@
 "use client";
 
-import { useState } from "react";
+// import { useState } from "react";
 import { CheckCircle2 } from "lucide-react";
+import { useState, useEffect } from "react";
 
 // ─── Stats Counter (animated) ─────────────────────────────────────────────
 function StatCounter({ value, label, suffix = "" }: { value: number; label: string; suffix?: string }) {
   const [count, setCount] = useState(0);
 
-  useState(() => {
-    const interval = setInterval(() => {
-      setCount((prev) => {
-        if (prev >= value) {
-          clearInterval(interval);
-          return value;
-        }
-        return prev + Math.ceil(value / 50);
-      });
-    }, 20);
-    return () => clearInterval(interval);
-  }, [value]);
+useEffect(() => {
+  const interval = setInterval(() => {
+    setCount((prev) => {
+      if (prev >= value) {
+        clearInterval(interval);
+        return value;
+      }
+      return prev + Math.ceil(value / 50);
+    });
+  }, 20);
+  return () => clearInterval(interval);
+}, [value]);
 
   return (
     <div className="text-center">

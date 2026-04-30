@@ -119,7 +119,7 @@ export default function UnauthorizedPage() {
             {user && (
               <Button
                 onClick={handleLogout}
-                variant="outline"
+                variant="ghost" 
                 icon={LogOut}
                 iconPosition="left"
                 className="w-full rounded-xl border-red-500/30 text-red-500 hover:bg-red-500/10"

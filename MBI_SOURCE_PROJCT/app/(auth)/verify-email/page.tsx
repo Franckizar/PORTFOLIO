@@ -9,6 +9,7 @@ import { Mail, AlertCircle, CheckCircle2, RefreshCw, ArrowLeft } from "lucide-re
 import { Button } from "@/components/ui/ui/Button";
 import { authApi } from "@/lib/api/auth";
 import { verificationSchema, type VerificationFormData } from "@/lib/validations/auth";
+import Link from 'next/link'
 
 // ─── Halftone Dots ───────────────────────────────────────────────────────────
 function HalftoneDots({ fill = "var(--neu-primary)", size = 120, className = "" }) {

@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from 'react'
 import * as THREE from 'three'
+import { useState } from 'react'
 
 // TouchTexture class
 class TouchTexture {
@@ -13,9 +14,9 @@ class TouchTexture {
   speed: number
   trail: Array<{x: number, y: number, age: number, force: number, vx: number, vy: number}>
   last: {x: number, y: number} | null
-  canvas: HTMLCanvasElement
-  ctx: CanvasRenderingContext2D
-  texture: THREE.Texture
+canvas!: HTMLCanvasElement
+ctx!: CanvasRenderingContext2D
+  texture!: THREE.Texture
 
   constructor() {
     this.size = 64

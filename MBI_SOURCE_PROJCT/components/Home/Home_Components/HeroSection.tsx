@@ -228,7 +228,7 @@ export default function HeroSection() {
             ">
               {/* Replace src with your real photo */}
               <Image
-                src="https://cdn.pixabay.com/photo/2024/01/10/16/22/man-8499961_1280.jpg"
+                src="/6.webp"
                 alt="Arthur Takam — Full-Stack Developer"
                 fill
                 className="object-cover object-top"

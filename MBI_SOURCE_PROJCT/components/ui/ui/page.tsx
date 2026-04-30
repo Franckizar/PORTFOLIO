@@ -3,9 +3,10 @@
 
 import { Button } from '@/components/ui/existing/button';
 import { Badge } from '@/components/ui/existing/badge';
-import { Tabs } from '@/components/ui/existing/tabs';
-import { useToast } from '@/hooks/useToast';
-import { ThemeToggle } from '@/components/ui/ThemeToggle';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/existing/tabs';
+import { useToast } from './useToast';
+// components/ui/ui/page.tsx — add this at the top
+import { ThemeToggle } from '@/components/ui/ui/ThemeToggle';
 
 export default function Home() {
   const { showToast } = useToast();
@@ -22,16 +23,34 @@ export default function Home() {
         <ThemeToggle />
       </div>
       
-      <div className="space-y-6">
-        <div className="flex gap-4">
-          <Button variant="primary" onClick={() => showToast('Success!', 'success')}>
-            Show Toast
-          </Button>
-          <Badge variant="primary">New Feature</Badge>
-        </div>
-        
-        <Tabs tabs={tabs} />
-      </div>
+<div className="space-y-6">
+  <div className="flex gap-4">
+
+    {/* "primary" → "default" */}
+    <Button variant="default" onClick={() => showToast('Success!', 'success')}>
+      Show Toast
+    </Button>
+
+    {/* "primary" → "default" */}
+    <Badge variant="default">New Feature</Badge>
+
+  </div>
+
+  {/* Tabs doesn't accept a "tabs" prop → use shadcn structure */}
+  <Tabs defaultValue="tab1">
+    <TabsList>
+      <TabsTrigger value="tab1">Overview</TabsTrigger>
+      <TabsTrigger value="tab2">Details</TabsTrigger>
+    </TabsList>
+    <TabsContent value="tab1">
+      <div>Overview content</div>
+    </TabsContent>
+    <TabsContent value="tab2">
+      <div>Details content</div>
+    </TabsContent>
+  </Tabs>
+
+</div>
     </main>
   );
 }
