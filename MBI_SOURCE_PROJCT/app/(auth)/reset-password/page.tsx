@@ -1,6 +1,5 @@
 // app/(auth)/reset-password/page.tsx
-"use client";
-
+import { Suspense } from "react";
 import { useState, useEffect } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
@@ -53,7 +52,8 @@ function WaveLines({ stroke = "var(--neu-primary)", className = "" }) {
   );
 }
 
-export default function ResetPasswordPage() {
+// ✨ Moved all your existing logic into this inner component
+function ResetPasswordForm() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const token = searchParams.get("token");
@@ -230,5 +230,14 @@ export default function ResetPasswordPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+// ✅ This is the actual page component with Suspense
+export default function ResetPasswordPage() {
+  return (
+    <Suspense fallback={<div className="min-h-[calc(100vh-64px)] flex items-center justify-center">Loading...</div>}>
+      <ResetPasswordForm />
+    </Suspense>
   );
 }
